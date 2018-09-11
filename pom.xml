@@ -44,7 +44,16 @@
             <artifactId>jjwt</artifactId>
             <version>0.6.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20170516</version>
+        </dependency>
 <!--        <dependency>
             <groupId>json</groupId>
             <artifactId>json</artifactId>
