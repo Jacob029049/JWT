@@ -1,14 +1,12 @@
 package com.jwt.demo.controller;
 
 import com.jwt.demo.facade.AzureOcrFacade;
-import com.jwt.demo.facade.impl.DefaultAzureOcrFacade;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -34,5 +32,12 @@ public class AzureOcrController {
 
 
         return "Welcome to home page.";
+    }
+
+    @RequestMapping(value = "ocr/transfer", method = RequestMethod.GET)
+    public void transfer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String path = null;
+       azureOcrFacade.sendImageToHybris(path,
+               "https://localhost:9002/boschproductregistrationwebservices/v2/boschstore-ro/ocr/queryProductByOCR");
     }
 }

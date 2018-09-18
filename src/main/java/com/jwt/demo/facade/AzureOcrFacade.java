@@ -9,4 +9,6 @@ public interface AzureOcrFacade {
     * @param(image url)
     * */
   String getSerialNumber(String url,InputStream inputStream);
+
+  void sendImageToHybris(String path,String url);
 }

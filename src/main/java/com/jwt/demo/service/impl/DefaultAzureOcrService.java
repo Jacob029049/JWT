@@ -1,24 +1,29 @@
 package com.jwt.demo.service.impl;
 
+import com.jwt.demo.bean.AzureOcrBean;
 import com.jwt.demo.service.AzureOcrService;
 import com.jwt.demo.util.HttpUtils;
+import net.sf.json.JSON;
+import net.sf.json.JSONObject;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONObject;
+import java.util.regex.Pattern;
 
 @Service(value = "azureOcrService")
 public class DefaultAzureOcrService implements AzureOcrService {
@@ -40,12 +45,11 @@ public class DefaultAzureOcrService implements AzureOcrService {
     public String getSerialNumber(String url,InputStream inputStream) {
 
         HttpClient httpClient = new DefaultHttpClient();
-        String serialNumber = null;
         try
         {
             URIBuilder uriBuilder = new URIBuilder(uriBase);
 
-            uriBuilder.setParameter("language", "unk");
+            uriBuilder.setParameter("language", "zh-Hans");
             uriBuilder.setParameter("detectOrientation ", "true");
 
             // Request parameters.
@@ -76,9 +80,62 @@ public class DefaultAzureOcrService implements AzureOcrService {
             {
                 // Format and display the JSON response.
                 String jsonString = EntityUtils.toString(entity);
-                JSONObject json = new JSONObject(jsonString);
-                System.out.println("REST Response:\n");
-                System.out.println(json.toString(2));
+
+                logger.info("img json from azureOCR : "+ jsonString);
+
+                JSONObject jsonObject = JSONObject.fromObject(jsonString);
+
+                Map classMap = new HashMap();
+                classMap.put("regions",AzureOcrBean.class);
+                classMap.put("lines",AzureOcrBean.class);
+                classMap.put("words",AzureOcrBean.class);
+
+                AzureOcrBean azureOcrBean = (AzureOcrBean) JSONObject.toBean(jsonObject, AzureOcrBean.class,classMap);
+
+                StringBuilder bareToolNumber = new StringBuilder();
+                StringBuilder serialNumber = new StringBuilder();
+
+                for (AzureOcrBean region :azureOcrBean.getRegions()){
+                    for (AzureOcrBean line : region.getLines()){
+
+                        List<AzureOcrBean> wordList = line.getWords();
+                        int size = wordList.size();
+                        for (int i =0;i < size;i++){
+                            AzureOcrBean word = line.getWords().get(i);
+                            String text = word.getText();
+                            //判断当前text是否是baretoolNumber开头
+                            if (isBareToolNumber(text)){
+                                bareToolNumber.append(text);
+                                //拼接baretoolNumber
+                                if (10>bareToolNumber.toString().length()&&(i+1)<size){
+                                    bareToolNumber.append(line.getWords().get(i+1).getText());
+                                }
+                                if (10>bareToolNumber.toString().length()&&(i+2)<size){
+                                    bareToolNumber.append(line.getWords().get(i+2).getText());
+                                }
+                                System.out.print("PTbareToolNumber: "+bareToolNumber.toString()+"\n");
+                            }
+                            //判断纯数字组合为serialNumber
+                            if (isSerialNumber(text)){
+                                serialNumber.append(text);
+                                //TT product
+                                if (bareToolNumber.toString().length()==0){
+                                    for (int j=0;j<i;j++){
+                                        String wordTTBareToolNumber = wordList.get(j).getText();
+                                        if (isNumeric(wordTTBareToolNumber)){
+                                            bareToolNumber.append(wordTTBareToolNumber);
+                                        }
+                                    }
+                                }
+                                System.out.print("TTbareToolNumber: "+bareToolNumber.toString()+"\n");
+                                System.out.print("serialNumber: "+serialNumber.toString()+"\n");
+                            }
+                        }
+                    }
+                }
+
+//                System.out.println("REST Response:\n");
+//                System.out.println(json.toString(2));
             }
         }
         catch (Exception e)
@@ -86,6 +143,27 @@ public class DefaultAzureOcrService implements AzureOcrService {
             // Display error message.
             logger.info(e.getMessage());
         }
-        return serialNumber;
+        return null;
+    }
+
+    private boolean isBareToolNumber (String text){
+        boolean isBareToolNumber =false;
+
+        isBareToolNumber = text.startsWith("3601")||text.startsWith("3600")||text.startsWith("0602")||text.startsWith("3603")||text.startsWith("0600");
+
+        return isBareToolNumber;
+    }
+
+    private boolean isSerialNumber (String text){
+        boolean isSerialNumber =false;
+
+        isSerialNumber = text.length()>8 && isNumeric(text);
+
+        return isSerialNumber;
+    }
+
+    public boolean isNumeric(String str) {
+        Pattern pattern = Pattern.compile("[0-9]*");
+        return pattern.matcher(str).matches();
     }
 }
