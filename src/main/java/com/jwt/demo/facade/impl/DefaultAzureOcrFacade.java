@@ -50,6 +50,7 @@ public class DefaultAzureOcrFacade implements AzureOcrFacade {
         try {
             FileInputStream fileInputStream = new FileInputStream(file);
             request.setHeader("Content-Type", "application/octet-stream");
+            request.setHeader("X-AUTH-TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJCT1NDSF9DSElOQV9PUEVOSUQiOiIxMjM0IiwiSVNTVUVfVElNRV9NSUxMSVMiOjE1MzYxMTM1ODA4MjQsImlhdCI6MTUzNjExMzU4MCwiZXhwIjoxNTk2MTE5ODgwLCJpc3MiOiJCT1NDSC0zNjAtRlJPTlRFTkQifQ.75jxVNwqH-ykk9QPBR1THZ9On0y-QoQ8JyrqmrM46I0");
             InputStreamEntity inputStreamEntity = new InputStreamEntity(fileInputStream);
             request.setEntity(inputStreamEntity);
         } catch (FileNotFoundException e) {

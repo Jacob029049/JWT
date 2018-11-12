@@ -38,6 +38,6 @@ public class AzureOcrController {
     public void transfer(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String path = null;
        azureOcrFacade.sendImageToHybris(path,
-               "https://localhost:9002/boschproductregistrationwebservices/v2/boschstore-ro/ocr/queryProductByOCR");
+               "https://localhost:9002/boschproductregistrationwebservices/v2/boschstore-ro/registrations/products/images");
     }
 }
